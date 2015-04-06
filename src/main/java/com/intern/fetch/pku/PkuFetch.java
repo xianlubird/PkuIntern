@@ -1,7 +1,6 @@
 package com.intern.fetch.pku;
 
 import com.gargoylesoftware.htmlunit.html.DomElement;
-import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -24,7 +23,7 @@ public class PkuFetch {
 		DomNodeList<DomElement> elements = page.getElementsByTagName("table");
 		//获取所有的table
 		DomElement targetElement = null;
-		for(DomElement item: elements) {
+		for (DomElement item: elements) {
 			if ("body".equals(item.getAttribute("class"))) {
 				targetElement = item;
 				break;
@@ -40,20 +39,25 @@ public class PkuFetch {
 			//下面就是我们需要的内容
 			DomNodeList<HtmlElement> tdElement = element.getElementsByTagName("td");
 			for (HtmlElement td: tdElement) {
-				DomNodeList<HtmlElement> allElement = td.getElementsByTagName("");
-				System.out.println(allElement.size());
-				for (HtmlElement tempElement: allElement) {
-					if ("col36".equals(tempElement.getAttribute("class"))) {
+				DomNodeList<HtmlElement> spanElement = td.getElementsByTagName("span");
+				for (HtmlElement tempElement: spanElement) {
+					if (tempElement.getAttribute("class").matches("col3.")) {
 						//这里获取的是每个帖子的发帖时间
 						System.out.println(tempElement.getTextContent());
 					}
 					
-					if (tempElement.getAttribute("href").contains("bbscon")) {
-						System.out.println(tempElement.getTextContent());
-						System.out.println(tempElement.getAttribute("href"));
-					}
 				} 
 				
+				
+				DomNodeList<HtmlElement> aElement = td.getElementsByTagName("a");
+				for (HtmlElement tempElement: aElement) {
+					if (tempElement.getAttribute("href").contains("bbscon")) {
+						//这里是每个帖子的Title，需要去掉Re:
+						System.out.println(tempElement.getTextContent());
+						//这里是每个帖子的具体URL
+						System.out.println(tempElement.getAttribute("href"));
+					}
+				}
 			}
 		}
 	}
