@@ -2,6 +2,7 @@ package com.intern.fetch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -12,6 +13,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
  * 
  * @author bird Apr 3, 2015 4:05:21 PM
  */
+@Component
 public class FetchPage {
 	
 	private Logger logger = LoggerFactory.getLogger(FetchPage.class);
