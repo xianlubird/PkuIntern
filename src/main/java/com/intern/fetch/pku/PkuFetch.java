@@ -1,5 +1,11 @@
 package com.intern.fetch.pku;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
@@ -25,13 +31,71 @@ public class PkuFetch {
 	@Autowired
 	private MongoTemplate mongo;
 	
+	public Map<String,String> monthlyMap;
+	
+	public PkuFetch() {
+		monthlyMap = new HashMap<String, String>();
+		monthlyMap.put("Jan", "01");
+		monthlyMap.put("Feb", "02");
+		monthlyMap.put("Mar", "03");
+		monthlyMap.put("Apr", "04");
+		monthlyMap.put("May", "05");
+		monthlyMap.put("Jun", "06");
+		monthlyMap.put("Jul", "07");
+		monthlyMap.put("Aug", "08");
+		monthlyMap.put("Sep", "09");
+		monthlyMap.put("Oct", "10");
+		monthlyMap.put("Nov", "11");
+		monthlyMap.put("Dec", "12");
+	}
+	
+	/**
+	 * 开始爬取的主控类
+	 */
+	public void startFetch() {
+		
+	}
+	
+	/**
+	 * 计算传递进来的参数对应于当前服务器时间过去了几天
+	 * 如果超过一个月，就返回false
+	 * 在一个月之内就是true
+	 * @param time
+	 * @return
+	 */
+	public boolean calculateTimeGap(String time) {
+		SimpleDateFormat sdf = new SimpleDateFormat("MM dd HH:mm");
+		Date date = null;
+		try {
+			date = sdf.parse(time);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		Date currentTime = new Date();
+		String tempTime = sdf.format(currentTime);
+		try {
+			currentTime = sdf.parse(tempTime);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		long nd = 1000 * 24 * 60 * 60;//一天的毫秒数 
+		long diff = currentTime.getTime() - date.getTime();
+		long day = diff / nd;//计算差了多少天
+		if (day <= 30) {
+			return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * 获取当前URL页面的所有标题和URL
+	 * 返回最后一个帖子的发帖时间
 	 * @param url
 	 */
-	public void getTitleInfo(String url) {
+	public String getTitleInfo(String url) {
 		HtmlPage page = fetch.fetchPage(url);
 		DomNodeList<DomElement> elements = page.getElementsByTagName("table");
+		String time = null;
 		//获取所有的table
 		DomElement targetElement = null;
 		for (DomElement item: elements) {
@@ -55,6 +119,7 @@ public class PkuFetch {
 					if (tempElement.getAttribute("class").matches("col3.")) {
 						//这里获取的是每个帖子的发帖时间
 						bean.setTime(tempElement.getTextContent());
+						time = tempElement.getTextContent();
 					//	System.out.println(tempElement.getTextContent());
 					}
 					
@@ -77,10 +142,13 @@ public class PkuFetch {
 			}
 			mongo.insert(bean);
 		}
+		return time;
 	}
 	
 	public static void main(String[] args) {
 		PkuFetch fetch = new PkuFetch();
-		fetch.getTitleInfo("http://www.bdwm.net/bbs/bbsdoc.php?board=intern");
+	//	fetch.getTitleInfo("http://www.bdwm.net/bbs/bbsdoc.php?board=intern");
+		boolean flag = fetch.calculateTimeGap("03 15 22:25");
+		System.out.println(flag);
 	}
 }
