@@ -18,6 +18,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.intern.bean.PkuBean;
 import com.intern.fetch.FetchPage;
+import com.intern.utils.TwoTuple;
 
 /**
  * 处理抓取北大未名BBS实习信息
@@ -56,8 +57,24 @@ public class PkuFetch {
 	/**
 	 * 开始爬取的主控类
 	 */
-	public void startFetch() {
-		
+	public void startFetch(String url) {
+		int count = 0;
+		TwoTuple<String, String> info = getTitleInfo(url);
+		String time = info.first;
+		String nextPageUrl = info.second;
+		while (calculateTimeGap(time)) {
+			count++;
+			logger.info("正在爬取第" + count + "页, 链接为 " + nextPageUrl + "最后发帖时间" + time);
+			try {
+				Thread.sleep(1500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			nextPageUrl = "http://www.bdwm.net/bbs/" + nextPageUrl;
+			info = getTitleInfo(nextPageUrl);
+			time = info.first;
+			nextPageUrl = info.second;
+		}
 	}
 	
 	/**
@@ -96,13 +113,16 @@ public class PkuFetch {
 	}
 	
 	/**
-	 * 获取当前URL页面的所有标题和URL
-	 * 返回最后一个帖子的发帖时间
+	 * 获取当前URL页面的所有标题和URL<br/>
+	 * fisrt 返回最后一个帖子的发帖时间<br/>
+	 * second 返回下一页的URL
 	 * @param url
 	 */
-	public String getTitleInfo(String url) {
+	public TwoTuple<String,String> getTitleInfo(String url) {
 		HtmlPage page = fetch.fetchPage(url);
 		DomNodeList<DomElement> elements = page.getElementsByTagName("table");
+		//寻找上一页的URL
+		String nextPageUrl = getNextPageUrl(page);
 		String time = null;
 		//获取所有的table
 		DomElement targetElement = null;
@@ -150,12 +170,33 @@ public class PkuFetch {
 			}
 			mongo.insert(bean);
 		}
-		return time;
+		
+		return new TwoTuple<String, String>(time, nextPageUrl);
+	}
+	
+	/**
+	 * 根据提供的HtmlPage寻找上一页的URL
+	 * @param page
+	 * @return
+	 */
+	private String getNextPageUrl(HtmlPage page) {
+		DomNodeList<DomElement> thElement = page.getElementsByTagName("th");
+		for (DomElement element: thElement) {
+			if ("foot".equals(element.getAttribute("class"))) {
+				DomNodeList<HtmlElement> aElement = element.getElementsByTagName("a");
+				for (HtmlElement tempElement: aElement) {
+					if ("上页".equals(tempElement.getTextContent())) {
+						return tempElement.getAttribute("href");
+					}
+				}
+			}
+		}
+		return null;
 	}
 	
 	public static void main(String[] args) {
 		PkuFetch fetch = new PkuFetch();
-	//	fetch.getTitleInfo("http://www.bdwm.net/bbs/bbsdoc.php?board=intern");
+		fetch.getTitleInfo("http://www.bdwm.net/bbs/bbsdoc.php?board=intern");
 		boolean flag = fetch.calculateTimeGap("Apr 7 16:17");
 		System.out.println(flag);
 	}

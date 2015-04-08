@@ -26,6 +26,7 @@ public class TestController {
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public void index() {
-		fetch.getTitleInfo("http://www.bdwm.net/bbs/bbsdoc.php?board=intern");
+	//	fetch.getTitleInfo("http://www.bdwm.net/bbs/bbsdoc.php?board=intern");
+		fetch.startFetch("http://www.bdwm.net/bbs/bbsdoc.php?board=intern");
 	}
 }
