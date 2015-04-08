@@ -6,6 +6,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
@@ -24,6 +26,8 @@ import com.intern.fetch.FetchPage;
  */
 @Component
 public class PkuFetch {
+	
+	private Logger logger = LoggerFactory.getLogger(PkuFetch.class);
 	
 	@Autowired
 	private FetchPage fetch;
@@ -65,18 +69,22 @@ public class PkuFetch {
 	 */
 	public boolean calculateTimeGap(String time) {
 		SimpleDateFormat sdf = new SimpleDateFormat("MM dd HH:mm");
+		String prefix = time.substring(0, 3);
+		String numPrefix = monthlyMap.get(prefix);
+		time = time.replace(prefix, numPrefix);
 		Date date = null;
 		try {
 			date = sdf.parse(time);
 		} catch (ParseException e) {
-			e.printStackTrace();
+		//	e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 		Date currentTime = new Date();
 		String tempTime = sdf.format(currentTime);
 		try {
 			currentTime = sdf.parse(tempTime);
 		} catch (ParseException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 		long nd = 1000 * 24 * 60 * 60;//一天的毫秒数 
 		long diff = currentTime.getTime() - date.getTime();
@@ -148,7 +156,7 @@ public class PkuFetch {
 	public static void main(String[] args) {
 		PkuFetch fetch = new PkuFetch();
 	//	fetch.getTitleInfo("http://www.bdwm.net/bbs/bbsdoc.php?board=intern");
-		boolean flag = fetch.calculateTimeGap("03 15 22:25");
+		boolean flag = fetch.calculateTimeGap("Apr 7 16:17");
 		System.out.println(flag);
 	}
 }
