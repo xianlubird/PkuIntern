@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -29,6 +30,8 @@ import com.intern.utils.TwoTuple;
 public class PkuFetch {
 	
 	private Logger logger = LoggerFactory.getLogger(PkuFetch.class);
+	
+	private static final String PREFIX_URL = "http://www.bdwm.net/bbs/";
 	
 	@Autowired
 	private FetchPage fetch;
@@ -70,7 +73,7 @@ public class PkuFetch {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			nextPageUrl = "http://www.bdwm.net/bbs/" + nextPageUrl;
+			nextPageUrl = PREFIX_URL + nextPageUrl;
 			info = getTitleInfo(nextPageUrl);
 			time = info.first;
 			nextPageUrl = info.second;
@@ -159,7 +162,7 @@ public class PkuFetch {
 					if (tempElement.getAttribute("href").contains("bbscon")) {
 						//这里是每个帖子的Title，需要去掉Re:
 						String title = tempElement.getTextContent();
-						title = title.replaceAll("Re:", "");
+						//title = title.replaceAll("Re:", "");
 						bean.setTitle(title);
 					//	System.out.println(tempElement.getTextContent());
 						//这里是每个帖子的具体URL
@@ -168,7 +171,10 @@ public class PkuFetch {
 					}
 				}
 			}
-			mongo.insert(bean);
+			if (!bean.getTitle().contains("Re:")) {
+				bean = fillPageContent(bean);
+				mongo.insert(bean);
+			}
 		}
 		
 		return new TwoTuple<String, String>(time, nextPageUrl);
@@ -192,6 +198,28 @@ public class PkuFetch {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * 根据传递进来的PkuBean对象里面的URL<br/>
+	 * 访问对应的页面，拿到帖子的具体信息
+	 * @param PkuBean
+	 * @return
+	 */
+	private PkuBean fillPageContent(PkuBean bean) {
+		String url = bean.getUrl();
+		url = PREFIX_URL + url;
+		HtmlPage page = fetch.fetchPage(url);
+		List<DomElement> tableElement = page.getElementsByTagName("table");
+		DomElement targetElement = null;
+		for (DomElement element: tableElement) {
+			if ("doc".equals(element.getAttribute("class"))) {
+				targetElement = element;
+				break;
+			}
+		}
+		bean.setContent(targetElement.asXml());
+		return bean;
 	}
 	
 	public static void main(String[] args) {
