@@ -37,4 +37,25 @@ public class FetchPage {
 		}
 		return null; 
 	}
+	
+	/**
+	 * 根据提供的URL返回抓取的Page<br/>
+	 * 提供解析JS的功能
+	 * @param url
+	 * @return
+	 */
+	public HtmlPage fetchPageEnableJS(String url) {
+		WebClient webClient = new WebClient(BrowserVersion.CHROME);
+		webClient.getOptions().setJavaScriptEnabled(true);
+		webClient.getOptions().setCssEnabled(false);
+		try {
+			return webClient.getPage(url);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			//e.printStackTrace();
+		}finally {
+			webClient.closeAllWindows();
+		}
+		return null; 
+	}
 }
