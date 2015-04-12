@@ -3,12 +3,14 @@ package com.intern.fetch.pku;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 
 import com.gargoylesoftware.htmlunit.html.DomElement;
 import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.intern.bean.NewsmthBean;
 import com.intern.fetch.FetchPage;
 
 /**
@@ -22,11 +24,13 @@ public class NewsmthFetch {
 	private Logger logger = LoggerFactory.getLogger(NewsmthFetch.class);
 	
 	@Autowired
+	private MongoTemplate mongo;
+	
+	@Autowired
 	private FetchPage fetch;
 	
 	public void fetchPage(String url) {
-		FetchPage f = new FetchPage();
-		HtmlPage page = f.fetchPageEnableJS(url);
+		HtmlPage page = fetch.fetchPageEnableJS(url);
 		DomNodeList<DomElement> divElements = page.getElementsByTagName("div");
 		DomElement targetElement = null;
 		for (DomElement element: divElements) {
@@ -38,6 +42,7 @@ public class NewsmthFetch {
 		
 		DomNodeList<HtmlElement> trElement = targetElement.getElementsByTagName("tr");
 		for (HtmlElement element: trElement) {
+			NewsmthBean bean = new NewsmthBean();
 			DomNodeList<HtmlElement> tdElement = element.getElementsByTagName("td");
 			for (HtmlElement tempElement: tdElement) {
 				//寻找发帖时间
@@ -45,6 +50,7 @@ public class NewsmthFetch {
 				String time = null;
 				if (timeElement.size() != 0) {
 					time = timeElement.get(0).getTextContent();
+					bean.setTime(time);
 					System.out.println("time" + time);
 				}
 				
@@ -54,11 +60,14 @@ public class NewsmthFetch {
 					if (aTempElement.getAttribute("href").contains("bbscon")) {
 						String title = aTempElement.getTextContent();
 						String href = aTempElement.getAttribute("href");
+						bean.setTitle(title);
+						bean.setHref(href);
 						System.out.println("title" + title);
 						System.out.println("href" + href);
 					}
 				}
 			}
+			mongo.save(bean);
 		}
 	}
 	
