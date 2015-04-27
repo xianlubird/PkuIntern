@@ -4,7 +4,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * 存储未名BBS的帖子的所有信息
- * 
+ * tes
  * @author bird Apr 7, 2015 2:44:04 PM
  */
 @Document
